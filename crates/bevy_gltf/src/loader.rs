@@ -59,53 +59,51 @@ fn load_rgltf(_path: &Path, _bytes: Vec<u8>) -> Mesh {
         // println!("attributes: {:#?} \n", attributes);
 
         let positions_accessor = *attributes.data;
-        let indicies_accessor = *primitives.indices;
+        let indices_accessor = *primitives.indices;
 
         let positions_count = positions_accessor.count;
-        let indices_count = indicies_accessor.count;
+        let indices_count = indices_accessor.count;
 
         let positions_offset = positions_accessor.offset;
-        let indices_offset = indicies_accessor.offset;
+        let indices_offset = indices_accessor.offset;
 
         let positions_stride = positions_accessor.stride;
-        let indices_stride = indicies_accessor.stride;
-
-        let positions_buffer_view = *positions_accessor.buffer_view;
-        let indicies_buffer_view = *indicies_accessor.buffer_view;
-
-        let positions_buffer = *positions_buffer_view.buffer;
-        let indicies_buffer = *indicies_buffer_view.buffer;
-
-        let positions_data = positions_buffer.data;
-        let indicies_data = indicies_buffer.data;
+        let indices_stride = indices_accessor.stride;
 
         println!("positions_accessor: {:#?} \n", positions_accessor);
-        println!("indicies_accessor: {:#?} \n", indicies_accessor);
+        println!("indices_accessor: {:#?} \n", indices_accessor);
 
-        println!("positions_count: {:#?} \n", positions_count);
-        println!("indices_count: {:#?} \n", indices_count);
+        println!("positions_count: {:#?} \n", positions_count); // 3321
+        println!("indices_count: {:#?} \n", indices_count); // 11808
 
-        println!("positions_offset: {:#?} \n", positions_offset);
-        println!("indices_offset: {:#?} \n", indices_offset);
+        println!("positions_offset: {:#?} \n", positions_offset); // 0
+        println!("indices_offset: {:#?} \n", indices_offset); // 0
 
-        println!("positions_stride: {:#?} \n", positions_stride);
-        println!("indices_stride: {:#?} \n", indices_stride);
+        println!("positions_stride: {:#?} \n", positions_stride); // 12
+        println!("indices_stride: {:#?} \n", indices_stride); // 2
 
-        println!("positions_buffer_view: {:#?} \n", positions_buffer_view);
-        println!("indicies_buffer_view: {:#?} \n", indicies_buffer_view);
+        // Positions is cgltf_type_vec3.
+        // Indicies is cgltf_type_scalar.
 
-        println!("positions_buffer: {:#?} \n", positions_buffer);
-        println!("indicies_buffer: {:#?} \n", indicies_buffer);
+        let positions_out: *mut ffi::cgltf_float = std::ptr::null_mut();
+        let indices_out: *mut ffi::cgltf_float = std::ptr::null_mut();
 
-        println!("positions_data: {:#?} \n", *positions_data); // c_void?
-        println!("indicies_data: {:#?} \n", *indicies_data); // c_void?
+        let positions_count =
+            ffi::cgltf_accessor_unpack_floats(&positions_accessor, positions_out, positions_count);
+        let indices_count =
+            ffi::cgltf_accessor_unpack_floats(&indices_accessor, indices_out, indices_count);
 
-        // TODO: Use one of these functions?
-        // ffi::cgltf_accessor_unpack_floats()
-        // ffi::cgltf_accessor_num_components()
-        // ffi::cgltf_accessor_read_float()
-        // ffi::cgltf_accessor_read_uint()
-        // ffi::cgltf_accessor_read_index()
+        println!("positions_count: {:#?} \n", positions_count); // 9963
+        println!("indices_count: {:#?} \n", indices_count); // 11808
+
+        let positions_out: *mut ffi::cgltf_float = Vec::with_capacity(9963).as_mut_ptr();
+        let indices_out: *mut ffi::cgltf_float = Vec::with_capacity(11808).as_mut_ptr();
+
+        ffi::cgltf_accessor_unpack_floats(&positions_accessor, positions_out, positions_count);
+        ffi::cgltf_accessor_unpack_floats(&indices_accessor, indices_out, indices_count);
+
+        println!("positions_out: {:#?} \n", *positions_out);
+        println!("indices_out: {:#?} \n", *indices_out);
 
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         let positions = Vec::<[f32; 3]>::new();
