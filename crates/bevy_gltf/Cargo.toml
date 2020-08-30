@@ -16,7 +16,6 @@ bevy_asset = { path = "../bevy_asset", version = "0.1" }
 bevy_render = { path = "../bevy_render", version = "0.1" }
 
 # other
-gltf = { version = "0.15.2", default-features = false, features = ["utils"] }
 rgltf = { git = "https://github.com/eliaspekkala/rgltf", rev = "df28a39" }
 thiserror = "1.0"
 anyhow = "1.0"
