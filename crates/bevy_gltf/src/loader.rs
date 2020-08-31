@@ -44,107 +44,71 @@ fn load_gltf(asset_path: &Path, _bytes: Vec<u8>) -> Mesh {
             panic!("Failed to load buffers {}", result);
         }
 
-        let data = *out_data;
-        let meshes = *data.meshes;
-        let primitives = *meshes.primitives;
-        let attributes = std::slice::from_raw_parts_mut(
+        let data: cgltf_data = *out_data;
+        let meshes: cgltf_mesh = *data.meshes;
+        let primitives: cgltf_primitive = *meshes.primitives;
+        let attributes: &mut [cgltf_attribute] = std::slice::from_raw_parts_mut(
             primitives.attributes,
             primitives.attributes_count as usize,
         );
 
-        // POSITIONS
-        let positions_accessor = *attributes[0].data;
-        let positions_count = positions_accessor.count;
-        let mut positions_out: Vec<[f32; 3]> = Vec::new();
-        positions_out.resize(positions_count as usize, [0.0; 3]);
-        let positions_count_adj = cgltf_accessor_unpack_floats(
-            &positions_accessor,
-            std::ptr::null_mut(),
-            positions_count,
-        );
-        let mut positions_temp_out: Vec<f32> = Vec::new();
-        positions_temp_out.resize(positions_count_adj as usize, 0.0);
+        // Positions
+        let positions_accessor: cgltf_accessor = *attributes[0].data;
+        let mut positions_flat: Vec<f32> = vec![0.0; (positions_accessor.count * 3) as usize];
         cgltf_accessor_unpack_floats(
             &positions_accessor,
-            positions_temp_out.as_mut_ptr(),
-            positions_count_adj as u64,
+            positions_flat.as_mut_ptr(),
+            positions_accessor.count * 3,
         );
-        for i in 0..3321 {
-            positions_out[i] = [
-                positions_temp_out[i * 3 + 0],
-                positions_temp_out[i * 3 + 1],
-                positions_temp_out[i * 3 + 2],
+        let mut positions: Vec<[f32; 3]> = vec![[0.0; 3]; positions_accessor.count as usize];
+        for i in 0..positions_accessor.count as usize {
+            positions[i] = [
+                positions_flat[i * 3 + 0],
+                positions_flat[i * 3 + 1],
+                positions_flat[i * 3 + 2],
             ];
         }
-        let positions: Vec<[f32; 3]> = positions_out;
 
-        // NORMALS
-        let normals_accessor = *attributes[1].data;
-        let normals_count = normals_accessor.count;
-        let mut normals_out: Vec<[f32; 3]> = Vec::new();
-        normals_out.resize(normals_count as usize, [0.0; 3]);
-        let normals_count_adj =
-            cgltf_accessor_unpack_floats(&normals_accessor, std::ptr::null_mut(), normals_count);
-        let mut normals_temp_out: Vec<f32> = Vec::new();
-        normals_temp_out.resize(normals_count_adj as usize, 0.0);
+        // Normals
+        let normals_accessor: cgltf_accessor = *attributes[1].data;
+        let mut normals_flat: Vec<f32> = vec![0.0; (normals_accessor.count * 3) as usize];
         cgltf_accessor_unpack_floats(
             &normals_accessor,
-            normals_temp_out.as_mut_ptr(),
-            normals_count_adj as u64,
+            normals_flat.as_mut_ptr(),
+            normals_accessor.count * 3,
         );
-        for i in 0..3321 {
-            normals_out[i] = [
-                normals_temp_out[i * 3 + 0],
-                normals_temp_out[i * 3 + 1],
-                normals_temp_out[i * 3 + 2],
+        let mut normals: Vec<[f32; 3]> = vec![[0.0; 3]; normals_accessor.count as usize];
+        for i in 0..normals_accessor.count as usize {
+            normals[i] = [
+                normals_flat[i * 3 + 0],
+                normals_flat[i * 3 + 1],
+                normals_flat[i * 3 + 2],
             ];
         }
-        let normals: Vec<[f32; 3]> = normals_out;
 
-        // UVS
-        let uvs_accessor = *attributes[2].data;
-        let uvs_count = uvs_accessor.count;
-        let mut uvs_out: Vec<[f32; 2]> = Vec::new();
-        uvs_out.resize(uvs_count as usize, [0.0; 2]);
-        let uvs_count_adj =
-            cgltf_accessor_unpack_floats(&uvs_accessor, std::ptr::null_mut(), uvs_count);
-        let mut uvs_temp_out: Vec<f32> = Vec::new();
-        uvs_temp_out.resize(uvs_count_adj as usize, 0.0);
-        cgltf_accessor_unpack_floats(
-            &uvs_accessor,
-            uvs_temp_out.as_mut_ptr(),
-            uvs_count_adj as u64,
-        );
-        for i in 0..3321 {
-            uvs_out[i] = [uvs_temp_out[i * 2 + 0], uvs_temp_out[i * 2 + 1]];
+        // Uvs
+        let uvs_accessor: cgltf_accessor = *attributes[2].data;
+        let mut uvs_flat: Vec<f32> = vec![0.0; (uvs_accessor.count * 2) as usize];
+        cgltf_accessor_unpack_floats(&uvs_accessor, uvs_flat.as_mut_ptr(), uvs_accessor.count * 2);
+        let mut uvs: Vec<[f32; 2]> = vec![[0.0; 2]; uvs_accessor.count as usize];
+        for i in 0..uvs_accessor.count as usize {
+            uvs[i] = [uvs_flat[i * 2 + 0], uvs_flat[i * 2 + 1]];
         }
-        let uvs: Vec<[f32; 2]> = uvs_out;
 
-        // INDICIES
-        let indices_accessor = *primitives.indices;
-        let indices_count = indices_accessor.count;
-        let mut indices_out: Vec<f32> = Vec::new();
-        indices_out.resize(indices_count as usize, 0.0);
-        let indices_count_adj =
-            cgltf_accessor_unpack_floats(&indices_accessor, std::ptr::null_mut(), indices_count);
+        // Indices
+        let indices_accessor: cgltf_accessor = *primitives.indices;
+        let mut indices_flat: Vec<f32> = vec![0.0; indices_accessor.count as usize];
         cgltf_accessor_unpack_floats(
             &indices_accessor,
-            indices_out.as_mut_ptr(),
-            indices_count_adj as u64,
+            indices_flat.as_mut_ptr(),
+            indices_accessor.count,
         );
-        let indices: Vec<u32> = indices_out.into_iter().map(|i| i as u32).collect();
+        let mut indices: Vec<u32> = vec![0; indices_accessor.count as usize];
+        for i in 0..indices_accessor.count as usize {
+            indices[i] = indices_flat[i] as u32;
+        }
 
-        // DEBUG
-        // println!("positions_count: {:#?} \n", positions_count); // 3321
-        // println!("normals_count: {:#?} \n", normals_count); // 3321
-        // println!("uvs_count: {:#?} \n", uvs_count); // 3321
-        // println!("indices_count: {:#?} \n", indices_count); // 11808
-
-        // println!("positions_count_adj: {:#?} \n", positions_count_adj); // 9963
-        // println!("normals_count_adj: {:#?} \n", normals_count_adj); // 9963
-        // println!("uvs_count_adj: {:#?} \n", uvs_count_adj); // 6642
-        // println!("indices_count_adj: {:#?} \n", indices_count_adj); // 11808
-
+        // Mesh
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
         mesh.attributes.push(VertexAttribute::position(positions));
         mesh.attributes.push(VertexAttribute::normal(normals));
